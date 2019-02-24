@@ -12,7 +12,9 @@
         "bestmomo/laravel-email-confirmation": "^1.1",
         "fideloper/proxy": "^4.0",
         "laravel/framework": "5.7.*",
-        "laravel/tinker": "^1.0"
+        "laravel/tinker": "^1.0",
+        "prettus/l5-repository": "^2.6",
+        "rcrowe/twigbridge": "^0.9.9"
     },
     "require-dev": {
         "beyondcode/laravel-dump-server": "^1.0",

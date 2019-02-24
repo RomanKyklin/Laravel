@@ -1,0 +1,37 @@
+{% extends "../../layouts/base.twig" %}
+
+{% block title %}Users{% endblock %}
+{% block head %}
+    {{ parent() }}
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <h1>Users</h1>
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">name</th>
+                <th scope="col">email</th>
+                <th scope="col">email_verified_at</th>
+                <th scope="col">updated_at</th>
+                <th scope="col">created_at</th>
+                <th scope="col">confirmed</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <th scope="row">{{ user.id }}</th>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>{{ user.email_verified_at }}</td>
+                    <td>{{ user.created_at }}</td>
+                    <td>{{ user.updated_at }}</td>
+                    <td>{{ user.confirmed }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
