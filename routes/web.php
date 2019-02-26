@@ -22,3 +22,7 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::namespace('Admin')->prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/users', 'UserController@index')->name('admin.users');
 });
+
+Route::namespace('Parsers')->prefix('parser')->group(function () {
+   Route::get('/avito', 'ParserController@avitoList')->name('avito.list');
+});
