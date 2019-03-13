@@ -19,6 +19,8 @@ class CreateParseListTable extends Migration
             $table->string('title')->nullable();
             $table->string('href')->nullable();
             $table->integer('price')->nullable();
+            $table->text('description')->nullable();
+            $table->string('create_date')->nullable();
             $table->timestamps();
         });
     }

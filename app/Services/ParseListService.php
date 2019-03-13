@@ -4,7 +4,8 @@
 namespace App\Services;
 
 
-use Illuminate\Support\Facades\DB;
+use App\Helpers\ParseListHelper;
+use App\Repositories\ParseListRepository;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -26,43 +27,46 @@ class ParseListService
         $this->crawler = new Crawler($this->html);
     }
 
-
-    public function collectData()
+    /**
+     * @return void
+     */
+    private function collectData()
     {
         $divS = $this->crawler->filter(".item_table");
-        $advId = '';
-        $title = '';
-        $href = '';
-        $price = '';
+        $listHelper = new ParseListHelper();
 
         foreach ($divS as $div) {
             $spanS = $div->getElementsByTagName('span');
+            $divElements = $div->getElementsByTagName('div');
 
-            foreach ($spanS as $span) {
-                if ($span->getAttribute('itemprop') === 'name') {
-                    $href = $span->parentNode->getAttribute('href') ?? null;
-                    $title = $span->parentNode->getAttribute('title') ?? null;
-                    $advId = last(explode('_', $href)) ?? null;
-                }
-                if ($span->getAttribute('class') === 'price ' || $span->getAttribute('itemprop') === 'price') {
-                    $price = (int)str_replace([" ", "₽", "\n"], "", $span->nodeValue) ?? null;
+            foreach ($divElements as $key => $value) {
+                if ($value->getAttribute('class') === 'js-item-date c-2') {
+                    $listHelper->create_date = trim($value->getAttribute('data-absolute-date'));
                 }
             }
 
-            $this->listData[] = [
-                'href' => $href,
-                'title' => $title,
-                'adv_id' => $advId,
-                'price' => $price
-            ];
+            foreach ($spanS as $span) {
+                if ($span->getAttribute('itemprop') === 'name') {
+                    $listHelper->href = $span->parentNode->getAttribute('href') ?? null;
+                    $listHelper->title = $span->parentNode->getAttribute('title') ?? null;
+                    $listHelper->adv_id = last(explode('_', $listHelper->href)) ?? null;
+                }
+                if ($span->getAttribute('class') === 'price ' || $span->getAttribute('itemprop') === 'price') {
+                    $listHelper->price = (int)str_replace([" ", "₽", "\n"], "", $span->nodeValue) ?? null;
+                }
+            }
+
+            $this->listData[] = $listHelper->toArray();
         }
     }
 
     /**
-     * @return bool
+     * @return array
      */
-    public function save()
+    public function getParseList()
     {
-        return DB::table('parse_list')->insert($this->listData);
+        $this->collectData();
+
+        return $this->listData;
     }
 }

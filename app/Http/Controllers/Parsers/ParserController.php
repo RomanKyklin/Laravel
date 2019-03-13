@@ -2,14 +2,22 @@
 
 namespace App\Http\Controllers\Parsers;
 
+use App\Repositories\ParseListRepository;
 use App\Services\ParseListService;
 use App\Http\Controllers\Controller;
 use Symfony\Component\DomCrawler\Crawler;
 
 class ParserController extends Controller
 {
+    private $parseListRepository;
+
+    public function __construct(ParseListRepository $parseListRepository)
+    {
+        $this->parseListRepository = $parseListRepository;
+    }
+
     /**
-     * avito item parser
+     * Parsing avito item
      * @return \Illuminate\Http\JsonResponse
      */
     public function avitoItem()
@@ -32,10 +40,16 @@ class ParserController extends Controller
         ], 200, [], JSON_PRETTY_PRINT);
     }
 
+    /**
+     * Parsing avito list
+     */
     public function avitoList()
     {
         $parseService = new ParseListService('https://www.avito.ru/perm/nastolnye_kompyutery');
-        $parseService->collectData();
-        $parseService->save();
+        $parseList = $parseService->getParseList();
+
+        foreach ($parseList as $value) {
+            $this->parseListRepository->create($value);
+        }
     }
 }
