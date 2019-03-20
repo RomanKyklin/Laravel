@@ -42,14 +42,11 @@ class ParserController extends Controller
 
     /**
      * Parsing avito list
+     * @throws \Exception
      */
     public function avitoList()
     {
-        $parseService = new ParseListService('https://www.avito.ru/perm/nastolnye_kompyutery');
-        $parseList = $parseService->getParseList();
-
-        foreach ($parseList as $value) {
-            $this->parseListRepository->create($value);
-        }
+        $parseService = new ParseListService();
+        $parseService->collectDataAndSave();
     }
 }

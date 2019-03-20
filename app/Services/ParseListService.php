@@ -4,34 +4,61 @@
 namespace App\Services;
 
 
+use App\Entities\ParseList;
 use App\Helpers\ParseListHelper;
-use App\Repositories\ParseListRepository;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Class ParseListService
  * @package App\Services
  */
-class ParseListService
+class ParseListService implements IParseListService
 {
-    private $url;
+    /** @var Crawler */
     private $crawler;
     private $listData = [];
+    private $parsePages = [];
     private $html;
+    private $pageCount = 0;
 
-    public function __construct($url)
+
+    public function collectDataAndSave()
     {
-        $this->url = $url;
+        $this->parsePageCount($this->getUrl(1));
+        $this->setPagesCount(3);
+        $this->collectData();
+        $this->save();
+    }
+
+    /**
+     * @param $url
+     * @throws \Exception
+     */
+    public function setHtml($url)
+    {
         $this->html = file_get_contents($url);
+
+        if (strpos($this->html, 'html') === false) {
+            throw new \Exception('html not found!');
+        }
+
         /** @var Crawler crawler */
         $this->crawler = new Crawler($this->html);
     }
 
     /**
-     * @return void
+     * @param int|null $page
+     * @return string
      */
-    private function collectData()
+    public function getUrl(int $page = null)
     {
+        return "https://www.avito.ru/perm/nastolnye_kompyutery?p={$page}";
+    }
+
+    public function parse(int $page)
+    {
+        $this->setHtml($this->getUrl($page));
+
         $divS = $this->crawler->filter(".item_table");
         $listHelper = new ParseListHelper();
 
@@ -52,11 +79,60 @@ class ParseListService
                     $listHelper->adv_id = last(explode('_', $listHelper->href)) ?? null;
                 }
                 if ($span->getAttribute('class') === 'price ' || $span->getAttribute('itemprop') === 'price') {
-                    $listHelper->price = (int)str_replace([" ", "₽", "\n"], "", $span->nodeValue) ?? null;
+                    $price = preg_replace('/[^0-9]/', '', $span->nodeValue);
+                    $listHelper->price = (int)$price ?? null;
                 }
             }
 
             $this->listData[] = $listHelper->toArray();
+            $this->parsePages[] = $page;
+        }
+    }
+
+    /**
+     * @param string $startPageUrl
+     * @return string
+     * @throws \Exception
+     */
+    public function parsePageCount(string $startPageUrl)
+    {
+        $this->setHtml($startPageUrl);
+        $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
+        preg_match('/p=(\d+)/', $href, $pageCount);
+
+        if (!isset($pageCount[1])) {
+            throw new \Exception('Pages count not found on page');
+        }
+
+        $this->setPagesCount((int)trim($pageCount[1]));
+    }
+
+    /**
+     * @return int
+     */
+    public function getPageCount()
+    {
+        return $this->pageCount;
+    }
+
+    public function getParsePages()
+    {
+        return $this->parsePages;
+    }
+
+    public function setPagesCount(int $pagesCount)
+    {
+        $this->pageCount = $pagesCount;
+    }
+
+    /**
+     * @return void
+     * @throws \Exception
+     */
+    public function collectData()
+    {
+        for ($i = 1; $i <= $this->getPageCount(); $i++) {
+            $this->parse($i);
         }
     }
 
@@ -65,8 +141,16 @@ class ParseListService
      */
     public function getParseList()
     {
-        $this->collectData();
-
         return $this->listData;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function save()
+    {
+        foreach ($this->getParseList() as $value) {
+            ParseList::firstOrCreate($value);
+        }
     }
 }
