@@ -27,4 +27,6 @@ Route::namespace('Admin')->prefix('admin')->middleware(['auth'])->group(function
 
 Route::namespace('Parsers')->prefix('parser')->group(function () {
    Route::get('/avito', 'ParserController@avitoList')->name('avito.list');
+   Route::get('/avito_guzzle', 'ParserController@avitoListGuzzle')->name('avito_guzzle.list');
+    Route::get('/avito_phantomejs', 'ParserController@avitoListPhantomejs')->name('avito_guzzle.list');
 });

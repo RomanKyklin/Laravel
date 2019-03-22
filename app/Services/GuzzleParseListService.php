@@ -1,25 +1,20 @@
 <?php
 
-
 namespace App\Services;
 
+
 use App\Helpers\ParseListHelper;
+use GuzzleHttp\Client;
 use Symfony\Component\DomCrawler\Crawler;
 
-/**
- * Class ParseListService
- * @package App\Services
- */
-class ParseListService extends BaseListService implements IParseListService
+class GuzzleParseListService extends BaseListService implements IParseListService
 {
 
-    /**
-     * @param $url
-     * @throws \Exception
-     */
     public function setHtml($url)
     {
-        $this->html = file_get_contents($url);
+        $this->html = (new Client([
+            'base_url' => $url,
+        ]))->get($url)->getBody()->getContents();
 
         if (strpos($this->html, 'html') === false) {
             throw new \Exception('html not found!');
@@ -29,14 +24,25 @@ class ParseListService extends BaseListService implements IParseListService
         $this->crawler = new Crawler($this->html);
     }
 
-    /**
-     * @param int|null $page
-     * @return string
-     */
     public function getUrl(int $page = null)
     {
         return "https://www.avito.ru/perm/nastolnye_kompyutery?p={$page}";
     }
+
+
+    public function parsePageCount(string $startPageUrl)
+    {
+        $this->setHtml($startPageUrl);
+        $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
+        preg_match('/p=(\d+)/', $href, $pageCount);
+
+        if (!isset($pageCount[1])) {
+            throw new \Exception('Pages count not found on page');
+        }
+
+        $this->setPagesCount((int)trim($pageCount[1]));
+    }
+
 
     public function parse(int $page)
     {
@@ -71,23 +77,4 @@ class ParseListService extends BaseListService implements IParseListService
             $this->parsePages[] = $page;
         }
     }
-
-    /**
-     * @param string $startPageUrl
-     * @return string
-     * @throws \Exception
-     */
-    public function parsePageCount(string $startPageUrl)
-    {
-        $this->setHtml($startPageUrl);
-        $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
-        preg_match('/p=(\d+)/', $href, $pageCount);
-
-        if (!isset($pageCount[1])) {
-            throw new \Exception('Pages count not found on page');
-        }
-
-        $this->setPagesCount((int)trim($pageCount[1]));
-    }
-
 }

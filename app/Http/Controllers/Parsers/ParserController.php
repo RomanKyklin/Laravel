@@ -3,12 +3,19 @@
 namespace App\Http\Controllers\Parsers;
 
 use App\Repositories\ParseListRepository;
+use App\Services\GuzzleParseListService;
 use App\Services\ParseListService;
 use App\Http\Controllers\Controller;
+use App\Services\PhantomParseListService;
 use Symfony\Component\DomCrawler\Crawler;
 
+/**
+ * Class ParserController
+ * @package App\Http\Controllers\Parsers
+ */
 class ParserController extends Controller
 {
+    /** @var ParseListRepository */
     private $parseListRepository;
 
     public function __construct(ParseListRepository $parseListRepository)
@@ -42,11 +49,26 @@ class ParserController extends Controller
 
     /**
      * Parsing avito list
-     * @throws \Exception
+     * @param ParseListService $parseListService
      */
-    public function avitoList()
+    public function avitoList(ParseListService $parseListService)
     {
-        $parseService = new ParseListService();
-        $parseService->collectDataAndSave();
+        $parseListService->collectDataAndSave();
+    }
+
+    /**
+     * @param GuzzleParseListService $parseListService
+     */
+    public function avitoListGuzzle(GuzzleParseListService $parseListService)
+    {
+        $parseListService->collectDataAndSave();
+    }
+
+    /**
+     * @param PhantomParseListService $parseListService
+     */
+    public function avitoListPhantomejs(PhantomParseListService $parseListService)
+    {
+        $parseListService->collectDataAndSave();
     }
 }

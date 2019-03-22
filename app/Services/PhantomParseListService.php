@@ -1,42 +1,56 @@
 <?php
 
-
 namespace App\Services;
 
-use App\Helpers\ParseListHelper;
-use Symfony\Component\DomCrawler\Crawler;
 
-/**
- * Class ParseListService
- * @package App\Services
- */
-class ParseListService extends BaseListService implements IParseListService
+use App\Helpers\ParseListHelper;
+use JonnyW\PhantomJs\Client;
+
+class PhantomParseListService extends BaseListService implements IParseListService
 {
 
-    /**
-     * @param $url
-     * @throws \Exception
-     */
     public function setHtml($url)
     {
-        $this->html = file_get_contents($url);
+        $client = Client::getInstance();
+        /**
+         * @see JonnyW\PhantomJs\Request
+         **/
+        $request = $client->getMessageFactory()->createRequest('http://jonnyw.me', 'GET');
 
-        if (strpos($this->html, 'html') === false) {
-            throw new \Exception('html not found!');
+        /**
+         * @see JonnyW\PhantomJs\Http\Response
+         **/
+        $response = $client->getMessageFactory()->createResponse();
+
+        // Send the request
+        $client->send($request, $response);
+
+        if($response->getStatus() === 200) {
+
+            // Dump the requested page content
+            echo $response->getContent();
         }
-
-        /** @var Crawler crawler */
-        $this->crawler = new Crawler($this->html);
     }
 
-    /**
-     * @param int|null $page
-     * @return string
-     */
     public function getUrl(int $page = null)
     {
         return "https://www.avito.ru/perm/nastolnye_kompyutery?p={$page}";
     }
+
+
+    public function parsePageCount(string $startPageUrl)
+    {
+        $this->setHtml($startPageUrl);
+        $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
+        preg_match('/p=(\d+)/', $href, $pageCount);
+
+        if (!isset($pageCount[1])) {
+            throw new \Exception('Pages count not found on page');
+        }
+
+        $this->setPagesCount((int)trim($pageCount[1]));
+    }
+
 
     public function parse(int $page)
     {
@@ -71,23 +85,4 @@ class ParseListService extends BaseListService implements IParseListService
             $this->parsePages[] = $page;
         }
     }
-
-    /**
-     * @param string $startPageUrl
-     * @return string
-     * @throws \Exception
-     */
-    public function parsePageCount(string $startPageUrl)
-    {
-        $this->setHtml($startPageUrl);
-        $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
-        preg_match('/p=(\d+)/', $href, $pageCount);
-
-        if (!isset($pageCount[1])) {
-            throw new \Exception('Pages count not found on page');
-        }
-
-        $this->setPagesCount((int)trim($pageCount[1]));
-    }
-
 }
