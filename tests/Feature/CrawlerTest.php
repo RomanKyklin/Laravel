@@ -5,12 +5,45 @@ namespace Tests\Feature;
 
 use App\Services\GuzzleParseListService;
 use App\Services\ParseListService;
+use App\Services\PhantomParseListService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class CrawlerTest extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * @group avito
+     * @test
+     */
+    public function avito_test_phantomejs_database_has()
+    {
+        $parser = new PhantomParseListService();
+        $parser->setPagesCount(2);
+        $parser->collectData();
+        $parser->save();
+
+        foreach ($parser->getParseList() as $value) {
+            $this->assertDatabaseHas('parse_list', $value);
+        }
+    }
+
+    /**
+     * @group avito
+     * @test
+     */
+    public function avito_test_phantomejs_database_missing()
+    {
+        $parser = new PhantomParseListService();
+        $parser->setPagesCount(2);
+        $parser->save();
+        $parser->parse(4);
+
+        foreach ($parser->getParseList() as $value) {
+            $this->assertDatabaseMissing('parse_list', $value);
+        }
+    }
 
     /**
      * @group avito

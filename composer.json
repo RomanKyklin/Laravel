@@ -12,7 +12,7 @@
         "bestmomo/laravel-email-confirmation": "^1.1",
         "fideloper/proxy": "^4.0",
         "guzzlehttp/guzzle": "~6.0",
-        "jonnyw/php-phantomjs": "@dev",
+        "josh/laravel-phantomjs": "^1.1",
         "laravel/framework": "5.7.*",
         "laravel/tinker": "^1.0",
         "prettus/l5-repository": "^2.6",

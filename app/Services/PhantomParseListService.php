@@ -4,32 +4,22 @@ namespace App\Services;
 
 
 use App\Helpers\ParseListHelper;
-use JonnyW\PhantomJs\Client;
+use Josh\Component\PhantomJs\Facade\PhantomJs;
+use Symfony\Component\DomCrawler\Crawler;
+
 
 class PhantomParseListService extends BaseListService implements IParseListService
 {
 
     public function setHtml($url)
     {
-        $client = Client::getInstance();
-        /**
-         * @see JonnyW\PhantomJs\Request
-         **/
-        $request = $client->getMessageFactory()->createRequest('http://jonnyw.me', 'GET');
+        $this->html = $this->getContent($url);
 
-        /**
-         * @see JonnyW\PhantomJs\Http\Response
-         **/
-        $response = $client->getMessageFactory()->createResponse();
-
-        // Send the request
-        $client->send($request, $response);
-
-        if($response->getStatus() === 200) {
-
-            // Dump the requested page content
-            echo $response->getContent();
+        if (strpos($this->html, 'html') === false) {
+            throw new \Exception('html not found!');
         }
+
+        $this->crawler = new Crawler($this->html);
     }
 
     public function getUrl(int $page = null)
@@ -84,5 +74,21 @@ class PhantomParseListService extends BaseListService implements IParseListServi
             $this->listData[] = $listHelper->toArray();
             $this->parsePages[] = $page;
         }
+    }
+
+    /**
+     * @return string
+     */
+    private function getContent($url)
+    {
+        $request = PhantomJs::get($url);
+
+        $response = PhantomJs::send($request);
+
+        if($response->getStatus() !== 200) {
+            throw new Exception('Bad response');
+        }
+
+        return $response->getContent();
     }
 }
