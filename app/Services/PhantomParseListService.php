@@ -4,7 +4,8 @@ namespace App\Services;
 
 
 use App\Helpers\ParseListHelper;
-use Josh\Component\PhantomJs\Facade\PhantomJs;
+use App\Services\Client\Client;
+use App\Services\Client\PhantomeClient;
 use Symfony\Component\DomCrawler\Crawler;
 
 
@@ -13,12 +14,9 @@ class PhantomParseListService extends BaseListService implements IParseListServi
 
     public function setHtml($url)
     {
-        $this->html = $this->getContent($url);
+        $this->html = (new Client(new PhantomeClient()))->get($url);
 
-        if (strpos($this->html, 'html') === false) {
-            throw new \Exception('html not found!');
-        }
-
+        /** @var Crawler crawler */
         $this->crawler = new Crawler($this->html);
     }
 
@@ -74,21 +72,5 @@ class PhantomParseListService extends BaseListService implements IParseListServi
             $this->listData[] = $listHelper->toArray();
             $this->parsePages[] = $page;
         }
-    }
-
-    /**
-     * @return string
-     */
-    private function getContent($url)
-    {
-        $request = PhantomJs::get($url);
-
-        $response = PhantomJs::send($request);
-
-        if($response->getStatus() !== 200) {
-            throw new Exception('Bad response');
-        }
-
-        return $response->getContent();
     }
 }

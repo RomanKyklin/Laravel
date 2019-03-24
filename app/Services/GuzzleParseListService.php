@@ -4,7 +4,8 @@ namespace App\Services;
 
 
 use App\Helpers\ParseListHelper;
-use GuzzleHttp\Client;
+use App\Services\Client\Client;
+use App\Services\Client\GuzzleClient;
 use Symfony\Component\DomCrawler\Crawler;
 
 class GuzzleParseListService extends BaseListService implements IParseListService
@@ -12,13 +13,7 @@ class GuzzleParseListService extends BaseListService implements IParseListServic
 
     public function setHtml($url)
     {
-        $this->html = (new Client([
-            'base_url' => $url,
-        ]))->get($url)->getBody()->getContents();
-
-        if (strpos($this->html, 'html') === false) {
-            throw new \Exception('html not found!');
-        }
+        $this->html = (new Client(new GuzzleClient()))->get($url);
 
         /** @var Crawler crawler */
         $this->crawler = new Crawler($this->html);

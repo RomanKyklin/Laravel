@@ -4,6 +4,8 @@
 namespace App\Services;
 
 use App\Helpers\ParseListHelper;
+use App\Services\Client\Client;
+use App\Services\Client\SimpleClient;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -19,11 +21,7 @@ class ParseListService extends BaseListService implements IParseListService
      */
     public function setHtml($url)
     {
-        $this->html = file_get_contents($url);
-
-        if (strpos($this->html, 'html') === false) {
-            throw new \Exception('html not found!');
-        }
+        $this->html = (new Client(new SimpleClient()))->get($url);
 
         /** @var Crawler crawler */
         $this->crawler = new Crawler($this->html);
