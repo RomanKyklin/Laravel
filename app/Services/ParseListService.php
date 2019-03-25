@@ -4,8 +4,6 @@
 namespace App\Services;
 
 use App\Helpers\ParseListHelper;
-use App\Services\Client\Client;
-use App\Services\Client\SimpleClient;
 use Symfony\Component\DomCrawler\Crawler;
 
 /**
@@ -16,15 +14,14 @@ class ParseListService extends BaseListService implements IParseListService
 {
 
     /**
-     * @param $url
-     * @throws \Exception
+     * @param $html
      */
-    public function setHtml($url)
+    public function setHtml($html)
     {
-        $this->html = (new Client(new SimpleClient()))->get($url);
+        $this->html = $html;
 
         /** @var Crawler crawler */
-        $this->crawler = new Crawler($this->html);
+        $this->crawler = new Crawler($html);
     }
 
     /**
@@ -38,8 +35,6 @@ class ParseListService extends BaseListService implements IParseListService
 
     public function parse(int $page)
     {
-        $this->setHtml($this->getUrl($page));
-
         $divS = $this->crawler->filter(".item_table");
         $listHelper = new ParseListHelper();
 
@@ -49,7 +44,10 @@ class ParseListService extends BaseListService implements IParseListService
 
             foreach ($divElements as $key => $value) {
                 if ($value->getAttribute('class') === 'js-item-date c-2') {
-                    $listHelper->create_date = trim($value->getAttribute('data-absolute-date'));
+                    preg_match('/([а-яА-Я]+)\s*(\d+:\d+)/', $value->getAttribute('data-absolute-date'), $matches);
+                    if($matches && $matches[0]) {
+                        $listHelper->create_date = trim(str_replace(chr(194),"  ",$matches[0]));
+                    }
                 }
             }
 
@@ -65,19 +63,20 @@ class ParseListService extends BaseListService implements IParseListService
                 }
             }
 
-            $this->listData[] = $listHelper->toArray();
-            $this->parsePages[] = $page;
+            $this->listData[$listHelper->adv_id] = $listHelper->toArray();
+
+            if(!in_array($page, $this->parsePages)) {
+                $this->parsePages[] = $page;
+            }
         }
     }
 
     /**
-     * @param string $startPageUrl
      * @return string
      * @throws \Exception
      */
-    public function parsePageCount(string $startPageUrl)
+    public function parsePageCount()
     {
-        $this->setHtml($startPageUrl);
         $href = $this->crawler->filter('a.pagination-page')->last()->getNode(0)->getAttribute('href');
         preg_match('/p=(\d+)/', $href, $pageCount);
 
@@ -87,5 +86,4 @@ class ParseListService extends BaseListService implements IParseListService
 
         $this->setPagesCount((int)trim($pageCount[1]));
     }
-
 }

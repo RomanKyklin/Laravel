@@ -5,9 +5,8 @@ namespace App\Services;
 
 
 use Symfony\Component\DomCrawler\Crawler;
-use App\Entities\ParseList;
 
-class BaseListService
+abstract class BaseListService
 {
     /** @var Crawler */
     protected $crawler;
@@ -53,21 +52,5 @@ class BaseListService
         return $this->listData;
     }
 
-    /**
-     * @throws \Exception
-     */
-    public function save()
-    {
-        foreach ($this->getParseList() as $value) {
-            ParseList::firstOrCreate($value);
-        }
-    }
-
-    public function collectDataAndSave()
-    {
-        $this->parsePageCount($this->getUrl(1));
-        $this->collectData();
-        $this->save();
-    }
-
+    abstract public function parsePageCount();
 }
