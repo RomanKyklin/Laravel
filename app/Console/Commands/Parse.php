@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Entities\ParseList;
+use App\Services\Client\SimpleClient;
 use App\Services\ParseListService;
 use Illuminate\Console\Command;
 
@@ -35,10 +37,18 @@ class Parse extends Command
      * Execute the console command.
      *
      * @return mixed
+     * @throws \Exception
      */
     public function handle()
     {
-        $parseService = new ParseListService();
-        $parseService->collectDataAndSave();
+        $parseListService = new ParseListService();
+        $url = $parseListService->getUrl(1);
+        $html = (new SimpleClient())->load($url);
+        $parseListService->setHtml($html);
+        $data = $parseListService->getData();
+
+        foreach ($data as $value) {
+            ParseList::firstOrCreate($value);
+        }
     }
 }

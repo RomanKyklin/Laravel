@@ -3,13 +3,10 @@
 namespace Tests\Feature;
 
 
-use App\Entities\ParseList;
+use App\Services\Client\GuzzleClient;
 use App\Services\Client\SimpleClient;
-use App\Services\GuzzleParseListService;
 use App\Services\ParseListService;
-use App\Services\PhantomParseListService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Normalizer;
 use Tests\Data\AvitoHelper;
 use Tests\TestCase;
 
@@ -17,75 +14,11 @@ class CrawlerTest extends TestCase
 {
     use RefreshDatabase;
 
-//    /**
-//     * @group avito
-//     * @test
-//     */
-//    public function avito_test_phantomejs_database_has()
-//    {
-//        $parser = new PhantomParseListService();
-//        $parser->setPagesCount(2);
-//        $parser->collectData();
-//        $parser->save();
-//
-//        foreach ($parser->getParseList() as $value) {
-//            $this->assertDatabaseHas('parse_list', $value);
-//        }
-//    }
-//
-//    /**
-//     * @group avito
-//     * @test
-//     */
-//    public function avito_test_phantomejs_database_missing()
-//    {
-//        $parser = new PhantomParseListService();
-//        $parser->setPagesCount(2);
-//        $parser->save();
-//        $parser->parse(4);
-//
-//        foreach ($parser->getParseList() as $value) {
-//            $this->assertDatabaseMissing('parse_list', $value);
-//        }
-//    }
-//
-//    /**
-//     * @group avito
-//     * @test
-//     */
-//    public function avito_test_guzzle_database_has()
-//    {
-//        $parser = new GuzzleParseListService();
-//        $parser->setPagesCount(2);
-//        $parser->collectData();
-//        $parser->save();
-//
-//        foreach ($parser->getParseList() as $value) {
-//            $this->assertDatabaseHas('parse_list', $value);
-//        }
-//    }
-//
-//    /**
-//     * @group avito
-//     * @test
-//     */
-//    public function avito_test_guzzle_database_missing()
-//    {
-//        $parser = new GuzzleParseListService();
-//        $parser->setPagesCount(2);
-//        $parser->save();
-//        $parser->parse(4);
-//
-//        foreach ($parser->getParseList() as $value) {
-//            $this->assertDatabaseMissing('parse_list', $value);
-//        }
-//    }
-
     /**
      * @group avito
      * @test
      */
-    public function avito_test_file_get_contents_database_has()
+    public function avito_test_pages()
     {
         $parseListService = new ParseListService();
         $url = $parseListService->getUrl(1);
@@ -94,14 +27,28 @@ class CrawlerTest extends TestCase
         $parseListService->setPagesCount(2);
         $parseListService->collectData();
         $pages = $parseListService->getParsePages();
-        $parseData = $parseListService->getParseList();
 
         foreach (AvitoHelper::$pages as $page) {
             $this->assertContains($page, $pages);
         }
+    }
+
+    /**
+     * @group avito
+     * @test
+     */
+    public function avito_test_items()
+    {
+        $parseListService = new ParseListService();
+        $url = $parseListService->getUrl(1);
+        $html = (new SimpleClient())->load($url);
+        $parseListService->setHtml($html);
+        $parseListService->setPagesCount(2);
+        $parseListService->collectData();
+        $parseData = $parseListService->getParseList();
 
         foreach (AvitoHelper::$listData as $key => $value) {
-            $this->assertTrue(array_key_exists($key,  $parseData));
+            $this->assertTrue(array_key_exists($key, $parseData));
             $this->assertEquals($value['adv_id'], $parseData[$key]['adv_id']);
             $this->assertEquals($value['title'], $parseData[$key]['title']);
             $this->assertEquals($value['href'], $parseData[$key]['href']);
@@ -112,20 +59,39 @@ class CrawlerTest extends TestCase
         }
     }
 
-//    /**
-//     * @group avito
-//     * @test
-//     */
-//    public function avito_test_file_get_contents_database_missing()
-//    {
-//        $parser = new ParseListService();
-//        $parser->setPagesCount(2);
-//        $parser->save();
-//        $parser->parse(4);
-//
-//        foreach ($parser->getParseList() as $value) {
-//            $this->assertDatabaseMissing('parse_list', $value);
-//        }
-//    }
+    /**
+     * @group simple-client
+     * @group client
+     * @test
+     */
+    public function simple_client_test()
+    {
+        $client = new SimpleClient();
+        $clientHtml = $client->load('https://www.avito.ru/perm');
+        $this->assertTrue(strpos($clientHtml, 'html') !== false);
+    }
 
+    /**
+     * @group guzzle-client
+     * @group client
+     * @test
+     */
+    public function guzzle_client_test()
+    {
+        $client = new GuzzleClient();
+        $clientHtml = $client->load('https://www.avito.ru/perm');
+        $this->assertTrue(strpos($clientHtml, 'html') !== false);
+    }
+
+    /**
+     * @group phantome-client
+     * @group client
+     * @test
+     */
+    public function phantome_client_test()
+    {
+        $client = new GuzzleClient();
+        $clientHtml = $client->load('https://www.avito.ru/perm');
+        $this->assertTrue(strpos($clientHtml, 'html') !== false);
+    }
 }

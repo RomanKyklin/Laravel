@@ -39,20 +39,4 @@ class ParserController extends Controller
             ParseList::firstOrCreate($value);
         }
     }
-
-//    /**
-//     * @param GuzzleParseListService $parseListService
-//     */
-//    public function avitoListGuzzle(GuzzleParseListService $parseListService)
-//    {
-//        $parseListService->collectDataAndSave();
-//    }
-//
-//    /**
-//     * @param PhantomParseListService $parseListService
-//     */
-//    public function avitoListPhantomejs(PhantomParseListService $parseListService)
-//    {
-//        $parseListService->collectDataAndSave();
-//    }
 }
